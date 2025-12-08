@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       image-tag:
-        description: "Tag for the image (default: latest)"
+        description: "Tag for the image (e.g. v1, v2; default: latest)"
         required: false
         default: "latest"
 
@@ -35,7 +35,24 @@ jobs:
 
       - name: Normalize image name to lowercase
         id: img
-        run: echo "name=${{ env.REGISTRY }}/$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+        run: |
+          IMAGE_NAME_LOWER=$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')
+          echo "name=${{ env.REGISTRY }}/${IMAGE_NAME_LOWER}" >> "$GITHUB_OUTPUT"
+
+      - name: Compute tags
+        id: tags
+        run: |
+          # manual tag from workflow_dispatch input
+          INPUT_TAG="${{ github.event.inputs.image-tag }}"
+          # fallback (should already be 'latest' from default)
+          if [ -z "$INPUT_TAG" ]; then
+            INPUT_TAG="latest"
+          fi
+
+          SHORT_SHA="${GITHUB_SHA::7}"
+
+          echo "input_tag=${INPUT_TAG}" >> "$GITHUB_OUTPUT"
+          echo "sha_tag=sha-${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -44,5 +61,6 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ steps.img.outputs.name }}:${{ github.event.inputs.image-tag }}
+            ${{ steps.img.outputs.name }}:${{ steps.tags.outputs.input_tag }}
             ${{ steps.img.outputs.name }}:latest
+            ${{ steps.img.outputs.name }}:${{ steps.tags.outputs.sha_tag }}
