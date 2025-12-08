@@ -1,14 +1,14 @@
 apiVersion: actions.summerwind.dev/v1alpha1
 kind: RunnerDeployment
 metadata:
-  name: {{REPO_NAME}}
+  name: copilot-agent-runner-pdf-invoice-to-excel
   namespace: actions-runner-system
 spec:
   replicas: 2
   template:
     spec:
       # Repo this runner will attach to (isNotOkay/<repo-name>)
-      repository: isNotOkay/{{REPO}}
+      repository: isNotOkay/pdf-invoice-to-excel
 
       labels:
         - self-hosted
