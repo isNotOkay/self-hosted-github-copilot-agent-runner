@@ -11,7 +11,7 @@ spec:
       labels:
         - copilot-agent
         - arc-runner
-      ephemeral: true
+      # ephemeral: true
       image: ghcr.io/isnotokay/self-hosted-github-copilot-agent-runner:v1
 
       env:
