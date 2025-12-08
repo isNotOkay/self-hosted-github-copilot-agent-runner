@@ -1,7 +1,6 @@
 name: Build and Publish Copilot Runner Image
 
 on:
-  # Manual trigger only
   workflow_dispatch:
     inputs:
       image-tag:
@@ -9,17 +8,16 @@ on:
         required: false
         default: "latest"
 
-permissions:
-  contents: read
-  packages: write   # Required for GHCR push
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-
-    env:
-      REGISTRY: ghcr.io
-      IMAGE_NAME: isnotokay/copilot-agent-runner
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - name: Checkout repository
@@ -35,6 +33,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Normalize image name to lowercase
+        id: img
+        run: echo "name=${{ env.REGISTRY }}/$(echo '${{ env.IMAGE_NAME }}' | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -42,5 +44,5 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.event.inputs.image-tag }}
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ steps.img.outputs.name }}:${{ github.event.inputs.image-tag }}
+            ${{ steps.img.outputs.name }}:latest
