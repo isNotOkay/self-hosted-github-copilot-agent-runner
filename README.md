@@ -1,189 +1,129 @@
 # 🛠 Self-Hosted GitHub Copilot Agent Runner (ARC + Minikube)
 
-This repository contains everything required to run **self-hosted GitHub Copilot Agent runners** for *individual repositories* using:
+This repository provides a complete setup for running **self-hosted GitHub Copilot Agent runners** on a personal GitHub account using:
 
 - **GitHub Actions Runner Controller (ARC)**
 - **Minikube (local Kubernetes)**
-- A **template-based RunnerDeployment generator**
+- **Template-based RunnerDeployment generation**
 
-Because personal GitHub accounts do **not** have an organization by default, ARC cannot manage organization-level runners.  
-➡️ **This project enables per-repository runners instead.**
+Because personal GitHub accounts do not include organizations, ARC cannot manage org-level runners.
+➡️ **This project enables repository-specific Copilot Agent runners instead.**
 
 ---
 
-## 📌 Overview
-
-This project includes:
+## 📌 Components
 
 ### 1️⃣ `github-arc-setup.sh`
-A full bootstrap script that:
+A bootstrap script that installs all required tools (Docker, kubectl, Minikube, Helm, cert-manager, ARC, .NET, Node.js) and configures ARC with your GitHub token.
 
-- Installs all required tools  
-  (.NET 9 SDK, Node.js 20, Docker, kubectl, Minikube, Helm, cert-manager, ARC)
-- Creates the GitHub token secret for ARC
-- Auto-resets ARC if previously installed
-- Prepares everything so that RunnerDeployment YAMLs can be applied
-
-📢 **This script must be executed before anything else.**
+> **Run twice** if Docker group membership is required.
 
 ---
 
-### 2️⃣ A RunnerDeployment **template**
-
-Located at:
+### 2️⃣ RunnerDeployment Template
+Located in:
 
 ```
 /runners/template.yml
 ```
 
-The template includes placeholders (`{{REPO}}`, `{{REPO_NAME}}`) that will be replaced during YAML generation.
-
-Every repository that should use a Copilot Agent runner **must generate its own RunnerDeployment YAML** using this template.
+Used to generate **per-repository** ARC RunnerDeployments.
 
 ---
 
-### 3️⃣ A YAML generator script
-
-Located at:
+### 3️⃣ YAML Generator Script
 
 ```
-/scripts/generate-runner.js
+node scripts/generate-runner.js <repo-name>
 ```
 
-Usage:
+Creates:
 
-```bash
-node generate-runner.js <repo-name>
+```
+/runners/<repo-name>-copilot-agent-runner.yml
+```
+
+Apply with:
+
+```
+kubectl apply -f runners/<file>.yml
+```
+
+---
+
+### 4️⃣ Repository-Specific Copilot Setup Workflow
+
+Every repo that uses your self-hosted Copilot Agent must contain:
+
+```
+.github/workflows/copilot-setup-steps.yml
 ```
 
 Example:
 
-```bash
-node generate-runner.js my-awesome-repo
+```yaml
+name: "Copilot Setup Steps"
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps:
+    runs-on: copilot-agent-runners
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Display environment information
+        run: |
+          dotnet --info || echo "dotnet not found"
+          node --version || echo "node not found"
+          npm --version || echo "npm not found"
+
+      - name: Verify environment
+        run: |
+          dotnet --list-sdks || echo "No SDKs"
+          node -e "console.log('Node OK')" || echo "Node failed"
 ```
 
-This produces:
-
-```
-/runners/my-awesome-repo-copilot-agent-runner.yml
-```
-
-The script:
-
-- Sanitizes the repository name
-- Applies the template
-- Ensures `metadata.name` is correct
-- Writes a complete runnable ARC YAML
+📌 **Purpose:**  
+This workflow prepares the environment the Copilot Agent will use.  
+Its contents should match the repository’s tech stack.
 
 ---
 
 ## 🔐 Required GitHub Token
 
-The setup script requires a **classic GitHub Personal Access Token** with the following scopes:
+A **classic PAT** with:
 
-| Scope | Purpose |
-|-------|---------|
-| `repo` | Required for repository runners |
-| `workflow` | Allows GitHub Actions workflows to run |
-| `admin:repo_hook` | Needed for ARC's webhook operations |
+- `repo`
+- `workflow`
+- `admin:repo_hook`
 
-Pass it using:
-
-```bash
-./github-arc-setup.sh --token <YOUR_GITHUB_CLASSIC_TOKEN>
-```
-
-A token already exists with the required permissions:
-
-> **Token name:** `self hosted github copilot agent runner`
-
----
-
-## ⚠️ Script Must Be Executed Twice
-
-During the **first run**, the script installs Docker and will output a message stating that your user must be added to the Docker group.
-
-To fix this:
-
-```bash
-sudo usermod -aG docker $USER
-newgrp docker
-```
-
-Alternatively log out and back in.
-
-Then re-run the script:
-
-```bash
-./github-arc-setup.sh --token <YOUR_TOKEN>
-```
-
-On the second run, everything completes successfully.
-
----
-
-## 🚀 After Setup
-
-### 1️⃣ Generate a RunnerDeployment YAML for each repository
-
-Example:
-
-```bash
-node scripts/generate-runner.js project-x
-```
-
-Apply it:
-
-```bash
-kubectl apply -f runners/project-x-copilot-agent-runner.yml
-```
-
-### 2️⃣ Verify runner pods
-
-```bash
-kubectl get pods -n actions-runner-system
-```
-
-You should see ephemeral runners starting.
-
----
-
-## 📁 Project Structure
+Use:
 
 ```
-.
-├── github-arc-setup.sh        # Full ARC + Minikube installer
-├── runners/
-│   ├── template.yml           # Base RunnerDeployment template
-│   └── *.yml                  # Generated runner YAMLs for each repo
-└── scripts/
-    └── generate-runner.js     # Script that creates per-repository YAMLs
+./github-arc-setup.sh --token <TOKEN>
 ```
 
 ---
 
-## ❓ Why is this needed?
+## 🚀 Usage Summary
 
-Personal GitHub accounts **do not have an organization**, which prevents:
-
-- Organization-wide runners
-- Organization-level ARC management
-
-Therefore:
-
-- ARC must register **repository-scoped runners**
-- Each repository requires a dedicated RunnerDeployment YAML
-- This project automates that entire workflow
+1. Run setup script  
+2. Generate a runner YAML per repo  
+3. Apply the YAML via `kubectl`  
+4. Ensure each repo includes `copilot-setup-steps.yml`  
+5. Copilot Agent will use your local ARC/Minikube runners
 
 ---
-
-## ✅ Summary
-
-| Feature | Supported |
-|---------|-----------|
-| Self-hosted Copilot Agent runners | ✔ |
-| Per-repository RunnerDeployment generation | ✔ |
-| Full environment auto-setup (Docker, kubectl, Helm, etc.) | ✔ |
-| Classic token authentication | ✔ |
-| Runs locally via Minikube | ✔ |
 
