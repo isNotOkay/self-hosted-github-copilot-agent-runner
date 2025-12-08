@@ -1,0 +1,44 @@
+name: "Copilot Setup Steps"
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps:
+    runs-on: copilot-agent-runners
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Display environment information
+        run: |
+          echo "========================================="
+          echo "Copilot Coding Agent Environment Setup"
+          echo "========================================="
+          echo "Runner: $RUNNER_NAME"
+          echo "OS: $RUNNER_OS"
+          echo "Architecture: $RUNNER_ARCH"
+          echo "Workspace: $GITHUB_WORKSPACE"
+          echo "========================================="
+          echo "Tool versions:"
+          dotnet --info || echo "dotnet not found"
+          node --version || echo "node not found"
+          npm --version || echo "npm not found"
+          echo "========================================="
+
+      - name: Verify environment by running simple commands
+        run: |
+          echo "Running basic verification..."
+          dotnet --list-sdks || echo "No SDKs listed"
+          node -e "console.log('Node is working')" || echo "Node test failed"
+          echo "✅ Environment setup completed (using preinstalled tools)"
