@@ -1,7 +1,11 @@
 FROM ghcr.io/actions/actions-runner:latest
 
+# Switch to root to be allowed to use apt-get
+USER root
+
 # Install Node.js 20 and .NET 8 SDK using distro-agnostic installers
-RUN apt-get update && \
+RUN mkdir -p /var/lib/apt/lists/partial && \
+    apt-get update && \
     apt-get install -y curl wget && \
     \
     # Install Node.js 20 (NodeSource)
@@ -16,6 +20,9 @@ RUN apt-get update && \
     \
     # Cleanup
     apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Switch back to the default runner user expected by the base image
+USER runner
 
 # Actions runner entrypoint
 ENTRYPOINT ["/home/runner/run.sh"]
