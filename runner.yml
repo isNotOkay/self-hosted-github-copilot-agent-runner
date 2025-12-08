@@ -1,24 +1,23 @@
-apiVersion: actions.github.com/v1alpha1
-kind: AutoScalingRunnerSet
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: RunnerDeployment
 metadata:
-  name: copilot-agent-runners          # reference this in runs-on:
+  name: copilot-agent-runners
   namespace: actions-runner-system
 spec:
-  githubConfigUrl: https://github.com/isNotOkay/self-hosted-github-copilot-agent-runner
-  githubConfigSecret: arc-ghapp-secret                # <-- name of your GitHub App secret
-  maxRunners: 10
-  minRunners: 0
+  replicas: 2
   template:
     spec:
-      image: ghcr.io/isnotokay/copilot-agent-runner:latest
-      ephemeral: true
+      repository: isNotOkay/self-hosted-github-copilot-agent-runner
       labels:
         - copilot-agent
         - arc-runner
+      ephemeral: true
+      image: ghcr.io/isnotokay/copilot-agent-runner:latest
+
       env:
         - name: GITHUB_HOST
-          value: github.com
+          value: "github.com"
         - name: GITHUB_SERVER_URL
-          value: https://github.com/
+          value: "https://github.com"
         - name: GITHUB_API_URL
-          value: https://api.github.com/
+          value: "https://api.github.com"
