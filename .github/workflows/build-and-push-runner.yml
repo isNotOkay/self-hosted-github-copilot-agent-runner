@@ -5,17 +5,16 @@ on:
   workflow_dispatch:
     inputs:
       image-tag:
-        description: 'Tag for the image (default: latest)'
+        description: "Tag for the image (default: latest)"
         required: false
-        default: 'latest'
+        default: "latest"
 
 permissions:
   contents: read
-  packages: write    # needed to push to GHCR
+  packages: write   # Required for GHCR push
 
 jobs:
   build-and-push:
-    # Make sure you run this workflow from main if you want main's code
     runs-on: ubuntu-latest
 
     env:
