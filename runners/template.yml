@@ -21,10 +21,6 @@ spec:
       # Use ephemeral runners (recommended for security)
       ephemeral: true
 
-      # ✅ IMPORTANT: explicit image so this cluster can actually start pods
-      # Replace this with the exact image you use on your *working* cluster if different
-      image: ghcr.io/actions/actions-runner:latest
-
       env:
         - name: GITHUB_HOST
           value: "github.com"
