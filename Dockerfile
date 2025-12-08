@@ -24,5 +24,6 @@ RUN mkdir -p /var/lib/apt/lists/partial && \
 # Switch back to the default runner user expected by the base image
 USER runner
 
-# Actions runner entrypoint
-ENTRYPOINT ["/home/runner/run.sh"]
+# ❌ DO NOT override ENTRYPOINT here.
+# Let the base image keep its default ENTRYPOINT (/home/runner/start.sh)
+# which handles ARC registration and runner configuration.
