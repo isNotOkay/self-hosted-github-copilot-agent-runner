@@ -6,13 +6,13 @@ metadata:
 spec:
   githubConfigUrl: https://github.com/isNotOkay/self-hosted-github-copilot-agent-runner
   githubConfigSecret: arc-ghapp-secret                # <-- name of your GitHub App secret
-  maxRunners: 10                                      # upper bound; adjust as needed
-  minRunners: 0                                       # 0 is typical for autoscaling
+  maxRunners: 10
+  minRunners: 0
   template:
     spec:
-      image: ghcr.io/YOUR_ORG/YOUR_RUNNER_IMAGE:TAG   # <-- your custom image
+      image: ghcr.io/isnotokay/copilot-agent-runner:latest
       ephemeral: true
-      labels:                                         # optional extra labels
+      labels:
         - copilot-agent
         - arc-runner
       env:

@@ -1,4 +1,4 @@
-FROM ghcr.io/actions/runner:latest
+FROM ghcr.io/actions/actions-runner:2.330.0
 
 RUN apt-get update && \
     apt-get install -y curl wget && \
