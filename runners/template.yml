@@ -1,20 +1,29 @@
 apiVersion: actions.summerwind.dev/v1alpha1
 kind: RunnerDeployment
 metadata:
-  name: runner-{{REPO_NAME}}
+  name: {{REPO_NAME}}
   namespace: actions-runner-system
 spec:
   replicas: 2
   template:
     spec:
+      # Repo this runner will attach to (isNotOkay/<repo-name>)
       repository: isNotOkay/{{REPO}}
+
       labels:
         - self-hosted
         - Linux
         - X64
         - arc-runner
         - copilot-agent
+
+      # Use ephemeral runners (recommended for security)
       ephemeral: true
+
+      # ✅ IMPORTANT: explicit image so this cluster can actually start pods
+      # Replace this with the exact image you use on your *working* cluster if different
+      image: ghcr.io/actions/actions-runner:latest
+
       env:
         - name: GITHUB_HOST
           value: "github.com"
@@ -32,6 +41,7 @@ spec:
           value: "/opt/hostedtoolcache/dotnet"
         - name: PLAYWRIGHT_BROWSERS_PATH
           value: "/opt/hostedtoolcache/pw-browsers"
+
       initContainers:
         - name: fix-toolcache-permissions
           image: busybox
@@ -45,11 +55,13 @@ spec:
           volumeMounts:
             - name: toolcache
               mountPath: /opt/hostedtoolcache
+
       containers:
         - name: runner
           volumeMounts:
             - name: toolcache
               mountPath: /opt/hostedtoolcache
+
       volumes:
         - name: toolcache
           hostPath:
