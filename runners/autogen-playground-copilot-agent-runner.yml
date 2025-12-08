@@ -16,6 +16,7 @@ spec:
         - X64
         - arc-runner
         - copilot-agent
+        - copilot-agent-runners
 
       # Use ephemeral runners (recommended for security)
       ephemeral: true
