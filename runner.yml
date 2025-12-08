@@ -12,7 +12,7 @@ spec:
         - copilot-agent
         - arc-runner
       ephemeral: true
-      image: ghcr.io/isnotokay/copilot-agent-runner:latest
+      image: ghcr.io/isnotokay/self-hosted-github-copilot-agent-runner:latest
 
       env:
         - name: GITHUB_HOST
