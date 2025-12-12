@@ -6,7 +6,7 @@ This repository provides a complete setup for running **self-hosted GitHub Copil
 - **Minikube (local Kubernetes)**
 - **Template-based RunnerDeployment generation**
 
-Because personal GitHub accounts do not include organizations, ARC cannot manage org-level runners.
+Because personal GitHub accounts do not include organizations, ARC cannot manage org-level runners.  
 ➡️ **This project enables repository-specific Copilot Agent runners instead.**
 
 ---
@@ -109,7 +109,7 @@ A **classic PAT** with:
 - `workflow`
 - `admin:repo_hook`
 
-Use:
+Usage:
 
 ```
 chmod +x github-arc-setup.sh
@@ -118,13 +118,44 @@ chmod +x github-arc-setup.sh
 
 ---
 
-## 🚀 Usage Summary
+## 👀 Watching Runner Pods in Real Time
 
-1. Run setup script  
-2. Generate a runner YAML per repo  
-3. Apply the YAML via `kubectl`  
-4. Ensure each repo includes `copilot-setup-steps.yml`  
-5. Copilot Agent will use your local ARC/Minikube runners
+Copilot Agent runners are typically **ephemeral**.  
+Pods are created **only when a GitHub Actions job is scheduled**, and are deleted after the job completes.
+
+To watch pods being created and destroyed in real time:
+
+```
+kubectl get pods -n actions-runner-system -w
+```
+
+To list only runner pods:
+
+```
+kubectl get pods -n actions-runner-system -l actions.summerwind.dev/runner
+```
 
 ---
 
+## 🧹 Permanently Deleting All Runner Pods (and Preventing Recreation)
+
+Deleting pods directly is **not sufficient**—ARC will recreate them.
+
+To permanently remove **all runners, the controller, and prevent any pods from coming back**, delete the ARC namespace:
+
+```
+kubectl delete namespace actions-runner-system
+```
+
+⚠️ **Only do this if you no longer need ARC on this cluster.**
+
+---
+
+## 🚀 Usage Summary
+
+1. Run setup script  
+2. Generate a runner YAML per repository  
+3. Apply the YAML via `kubectl`  
+4. Ensure each repo includes `copilot-setup-steps.yml`  
+5. Watch runner pods appear during GitHub Actions runs  
+6. Copilot Agent will use your local ARC/Minikube runners  
