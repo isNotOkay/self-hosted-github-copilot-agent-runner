@@ -16,8 +16,6 @@ Because personal GitHub accounts do not include organizations, ARC cannot manage
 ### 1️⃣ `github-arc-setup.sh`
 A bootstrap script that installs all required tools (Docker, kubectl, Minikube, Helm, cert-manager, ARC, .NET, Node.js) and configures ARC with your GitHub token.
 
-**Important:** ```chmod +x github-arc-setup.sh```
-
 > **Run twice** if Docker group membership is required.
 
 ---
@@ -114,6 +112,7 @@ A **classic PAT** with:
 Use:
 
 ```
+chmod +x github-arc-setup.sh
 ./github-arc-setup.sh --token <TOKEN>
 ```
 
