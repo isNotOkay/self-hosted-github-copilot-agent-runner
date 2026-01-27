@@ -1,14 +1,14 @@
 apiVersion: actions.summerwind.dev/v1alpha1
 kind: RunnerDeployment
 metadata:
-  name: copilot-agent-runner-invoice-processing-apis
+  name: copilot-agent-runner-document-processing-apis
   namespace: actions-runner-system
 spec:
   replicas: 2
   template:
     spec:
       # Repo this runner will attach to (isNotOkay/<repo-name>)
-      repository: isNotOkay/invoice-processing-apis
+      repository: isNotOkay/document-processing-apis
 
       labels:
         - self-hosted
