@@ -1,0 +1,66 @@
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: RunnerDeployment
+metadata:
+  name: copilot-agent-runner-dev-extreme-playground
+  namespace: actions-runner-system
+spec:
+  replicas: 2
+  template:
+    spec:
+      # Repo this runner will attach to (isNotOkay/<repo-name>)
+      repository: isNotOkay/dev-extreme-playground
+
+      labels:
+        - self-hosted
+        - Linux
+        - X64
+        - arc-runner
+        - copilot-agent
+        - copilot-agent-runners
+
+      # Use ephemeral runners (recommended for security)
+      ephemeral: true
+
+      env:
+        - name: GITHUB_HOST
+          value: "github.com"
+        - name: GITHUB_SERVER_URL
+          value: "https://github.com"
+        - name: GITHUB_API_URL
+          value: "https://api.github.com"
+        - name: RUNNER_TOOL_CACHE
+          value: "/opt/hostedtoolcache"
+        - name: AGENT_TOOLSDIRECTORY
+          value: "/opt/hostedtoolcache"
+        - name: DOTNET_INSTALL_DIR
+          value: "/opt/hostedtoolcache/dotnet"
+        - name: DOTNET_ROOT
+          value: "/opt/hostedtoolcache/dotnet"
+        - name: PLAYWRIGHT_BROWSERS_PATH
+          value: "/opt/hostedtoolcache/pw-browsers"
+
+      initContainers:
+        - name: fix-toolcache-permissions
+          image: busybox
+          command:
+            - sh
+            - -c
+            - |
+              mkdir -p /opt/hostedtoolcache
+              chown -R 1001:1001 /opt/hostedtoolcache
+              chmod -R 775 /opt/hostedtoolcache
+          volumeMounts:
+            - name: toolcache
+              mountPath: /opt/hostedtoolcache
+
+      containers:
+        - name: runner
+          volumeMounts:
+            - name: toolcache
+              mountPath: /opt/hostedtoolcache
+
+      volumes:
+        - name: toolcache
+          hostPath:
+            path: /home/kayosh/toolcache
+            type: DirectoryOrCreate
