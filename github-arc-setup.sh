@@ -91,7 +91,7 @@ fi
 
 echo "[7/13] Starting Minikube (if not already running)..."
 if ! minikube status &>/dev/null; then
-  minikube start --driver=docker --force
+  minikube start --driver=docker --memory=12288 --cpus=6 --force
 fi
 kubectl config use-context minikube
 
