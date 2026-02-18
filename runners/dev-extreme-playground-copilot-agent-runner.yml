@@ -4,7 +4,7 @@ metadata:
   name: copilot-agent-runner-dev-extreme-playground
   namespace: actions-runner-system
 spec:
-  replicas: 2
+  replicas: 1
   template:
     spec:
       # Repo this runner will attach to (isNotOkay/<repo-name>)
