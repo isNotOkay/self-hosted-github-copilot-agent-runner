@@ -116,6 +116,10 @@ chmod +x github-arc-setup.sh
 ./github-arc-setup.sh --token <TOKEN>
 ```
 
+⚠️ Important:
+- Do NOT use GitHub Actions `GITHUB_TOKEN`
+- Token must belong to a user with admin access to the repo
+
 ---
 
 ## 👀 Watching Runner Pods in Real Time
@@ -123,13 +127,9 @@ chmod +x github-arc-setup.sh
 Copilot Agent runners are typically **ephemeral**.  
 Pods are created **only when a GitHub Actions job is scheduled**, and are deleted after the job completes.
 
-To watch pods being created and destroyed in real time:
-
 ```
 kubectl get pods -n actions-runner-system -w
 ```
-
-To list only runner pods:
 
 ```
 kubectl get pods -n actions-runner-system -l actions.summerwind.dev/runner
@@ -137,25 +137,123 @@ kubectl get pods -n actions-runner-system -l actions.summerwind.dev/runner
 
 ---
 
-## 🧹 Permanently Deleting All Runner Pods (and Preventing Recreation)
-
-Deleting pods directly is **not sufficient**—ARC will recreate them.
-
-To permanently remove **all runners, the controller, and prevent any pods from coming back**, delete the ARC namespace:
+## 🧹 Permanently Deleting All Runner Pods
 
 ```
 kubectl delete namespace actions-runner-system
 ```
 
-⚠️ **Only do this if you no longer need ARC on this cluster.**
+⚠️ Only do this if you no longer need ARC.
 
 ---
 
 ## 🚀 Usage Summary
 
-1. Run setup script  
-2. Generate a runner YAML per repository  
-3. Apply the YAML via `kubectl`  
-4. Ensure each repo includes `copilot-setup-steps.yml`  
-5. Watch runner pods appear during GitHub Actions runs  
-6. Copilot Agent will use your local ARC/Minikube runners  
+1. Run setup script
+2. Generate a runner YAML per repository
+3. Apply the YAML via `kubectl`
+4. Ensure each repo includes `copilot-setup-steps.yml`
+5. Watch runner pods appear during GitHub Actions runs
+6. Copilot Agent will use your local ARC/Minikube runners
+
+---
+
+# 🧩 Troubleshooting
+
+## ❗ No Runner Pods Are Created
+
+If:
+
+```
+kubectl get pods -n actions-runner-system
+```
+
+and:
+
+```
+kubectl get runnerdeployments -n actions-runner-system
+```
+
+shows:
+
+```
+DESIRED: 2
+CURRENT: 0
+AVAILABLE: 0
+```
+
+➡️ ARC is failing before Pod creation.
+
+---
+
+## 🔍 Check Controller Logs
+
+```
+kubectl logs -n actions-runner-system deploy/actions-runner-controller -c manager --since=10m
+```
+
+---
+
+## 🚨 401 Bad credentials
+
+Example:
+
+```
+FailedUpdateRegistrationToken
+401 Bad credentials
+POST https://api.github.com/repos/<repo>/actions/runners/registration-token
+```
+
+➡️ Your GitHub token is invalid.
+
+---
+
+## 🔐 Fix Token
+
+```
+kubectl create secret generic controller-manager   -n actions-runner-system   --from-literal=github_token='<NEW_PAT>'   -o yaml --dry-run=client | kubectl apply -f -
+```
+
+```
+kubectl rollout restart deployment/actions-runner-controller -n actions-runner-system
+```
+
+---
+
+## ✅ Verify Fix
+
+```
+kubectl logs -n actions-runner-system deploy/actions-runner-controller -c manager --since=5m
+```
+
+Then:
+
+```
+kubectl get runnerdeployments -n actions-runner-system
+kubectl get pods -n actions-runner-system -w
+```
+
+---
+
+## ⚠️ GitHub Shows Runners but No Pods
+
+GitHub UI may show stale runners.
+
+➡️ Always trust Kubernetes state.
+
+---
+
+## 🧠 Key Insight
+
+If RunnerDeployment exists but CURRENT = 0 → almost always authentication issue.
+
+---
+
+## 🔧 Debug Commands
+
+```
+kubectl get runnerdeployments,runnerreplicasets,runners -n actions-runner-system
+kubectl get pods -n actions-runner-system -w
+kubectl get events -n actions-runner-system --sort-by=.metadata.creationTimestamp
+kubectl logs -n actions-runner-system deploy/actions-runner-controller -c manager --tail=200
+```
